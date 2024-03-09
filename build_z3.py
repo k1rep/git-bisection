@@ -29,7 +29,9 @@ def build_from_commit(repo_src, commit_hash):
     password = '123123'
     command = 'make install'
 
-    with open(log_file, 'a') as log:  # 打开日志文件，'a' 代表追加模式
+    with open(log_file, 'a') as log:
+        make_clean = subprocess.run(['make', 'clean'], cwd=repo_src, capture_output=True, text=True)
+        log.write(f'make clean output:\n{make_clean.stdout}\n{make_clean.stderr}\n')
         # 检出指定的提交
         checkout_result = subprocess.run(f'git checkout {commit_hash}', shell=True, cwd=repo_src, capture_output=True,
                                          text=True)
@@ -48,7 +50,7 @@ def build_from_commit(repo_src, commit_hash):
 
         # 执行 make install 并记录输出
         make_install_result = subprocess.run(['sudo', '-S'] + command.split(), input=password, text=True,
-                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=repo_src)
+                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=f'{repo_src}/build')
         log.write(f'make install output:\n{make_install_result.stdout}\n{make_install_result.stderr}\n')
 
 
