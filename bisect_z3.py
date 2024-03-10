@@ -1,6 +1,10 @@
 import subprocess
+import pandas as pd
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
+repo_path = "/home/uu613/workspace/z3"
 csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
 versions = ['z3-4.7.1-x64-ubuntu-16.04',
             'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04',
@@ -14,64 +18,84 @@ versions_to_commit = {'z3-4.7.1-x64-ubuntu-16.04': '3b1b82bef05a1b5fd69ece79c80a
                       'z3-4.8.5-x64-ubuntu-16.04': 'e79542cc689d52ec4cb34ce4ae3fbe56e7a0bf70'}
 
 
-def run_test():
-    """运行测试脚本并返回测试是否通过。"""
-    try:
-        subprocess.check_output(['./test_script.sh'], stderr=subprocess.STDOUT)
-        return True  # 测试通过
-    except subprocess.CalledProcessError:
-        return False  # 测试失败
+def run_test(case_filename, bug_result, bic):
+    """运行测试。"""
+    """获取当前commit的哈希值，并截取前9位。"""
+    completed_process = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True, cwd=repo_path)
+    commit_hash = completed_process.stdout.strip()[:9]
+    test_case = '/home/uu613/workspace/bugs/new_folder/' + case_filename
+    test_command = f"/home/uu613/workspace/z3_commits/z3-{commit_hash} {test_case}"
+    logging.info(f"Running test commit: z3-{commit_hash}")
+    result = subprocess.run(test_command, shell=True, capture_output=True, text=True)
+    # 对于寻找BIC，测试结果不是bug的结果，则返回True
+    # 对于寻找BFC，测试结果是bug的结果，则返回True
+    if bic:
+        if result.stdout.strip() != bug_result:
+            return True
+        elif result.stdout.strip() == bug_result:
+            return False
+    else:
+        if result.stdout.strip() == bug_result:
+            return True
+        elif result.stdout.strip() != bug_result:
+            return False
 
 
-def git_bisect_start(bad, good):
+def git_bisect_start(good, bad):
     """初始化git bisect会话。"""
-    subprocess.run(['git', 'bisect', 'start'])
-    subprocess.run(['git', 'bisect', 'bad', bad])
-    subprocess.run(['git', 'bisect', 'good', good])
+    subprocess.run(['git', 'bisect', 'start'], cwd=repo_path)
+    subprocess.run(['git', 'bisect', 'bad', bad], cwd=repo_path)
+    subprocess.run(['git', 'bisect', 'good', good], cwd=repo_path)
 
 
 def git_bisect_reset():
     """结束git bisect会话，恢复到开始前的状态。"""
-    subprocess.run(['git', 'bisect', 'reset'])
+    subprocess.run(['git', 'bisect', 'reset'], cwd=repo_path)
 
 
-def find_bad_commit():
+def find_bad_commit(case_filename, bug_result, bic):
     """找到引入错误的提交。"""
     while True:
         # 运行测试
-        if run_test():
+        if run_test(case_filename, bug_result, bic):
             # 如果测试通过，则当前提交是好的
-            subprocess.run(['git', 'bisect', 'good'])
+            subprocess.run(['git', 'bisect', 'good'], cwd=repo_path)
         else:
             # 如果测试失败，则当前提交是坏的
-            subprocess.run(['git', 'bisect', 'bad'])
+            subprocess.run(['git', 'bisect', 'bad'], cwd=repo_path)
 
         # 检查是否已经找到坏的提交
-        output = subprocess.check_output(['git', 'bisect', 'visualize'], text=True)
+        output = subprocess.check_output(['git', 'bisect', 'visualize'], text=True, cwd=repo_path)
         if 'is the first bad commit' in output:
             return output
 
 
 if __name__ == '__main__':
-    import pandas as pd
     df = pd.read_csv(csv_path)
     df['target_bic'] = '-1'
     df['target_bfc'] = '-1'
     for index, row in df.iterrows():
         bug_version = row[df.columns[1]]
+        bug_version = bug_version[:bug_version.find('/')]
         induced_version = row['induced_version']
         fixed_version = row['fixed_version']
         if induced_version != '-1':
             good_version = versions_to_commit[induced_version]
             bad_version = versions_to_commit[bug_version]
-            git_bisect_start(bad_version, good_version)
-            target = find_bad_commit()
+            bug_result = row['result']
+            logging.info(f"[finding BIC]Start bisecting {good_version}..{bad_version}")
+            git_bisect_start(good_version, bad_version)
+            target = find_bad_commit(row['Case-Filename'], bug_result, bic=True)
             git_bisect_reset()
             df.at[index, 'target_bic'] = target
         if fixed_version != '-1':
+            # 把引入错误的版本作为好的版本，把修复错误的版本作为坏的版本
+            # 这样可以定位到修复的commit
             good_version = versions_to_commit[bug_version]
             bad_version = versions_to_commit[fixed_version]
-            git_bisect_start(bad_version, good_version)
-            target = find_bad_commit()
+            bug_result = row['result']
+            logging.info(f"[finding BFC]Start bisecting {good_version}..{bad_version}")
+            git_bisect_start(good_version, bad_version)
+            target = find_bad_commit(row['Case-Filename'], bug_result, bic=False)
             git_bisect_reset()
             df.at[index, 'target_bfc'] = target

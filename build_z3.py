@@ -1,5 +1,7 @@
 import logging
 import subprocess
+from datetime import datetime
+
 import pandas as pd
 
 logging.basicConfig(level=logging.INFO)
@@ -25,33 +27,34 @@ def build_from_tag(repo_src, tag):
 
 
 def build_from_commit(repo_src, commit_hash):
-    log_file = 'build_commit.log'  # 定义日志文件名称
     password = '123123'
     command = 'make install'
 
-    with open(log_file, 'a') as log:
-        make_clean = subprocess.run(['make', 'clean'], cwd=repo_src, capture_output=True, text=True)
-        log.write(f'make clean output:\n{make_clean.stdout}\n{make_clean.stderr}\n')
-        # 检出指定的提交
-        checkout_result = subprocess.run(f'git checkout {commit_hash}', shell=True, cwd=repo_src, capture_output=True,
-                                         text=True)
-        log.write(f'Checkout commit {commit_hash} output:\n{checkout_result.stdout}\n{checkout_result.stderr}\n')
+    make_clean = subprocess.run(f"echo {password} | sudo -S make clean", shell=True, cwd=f'{repo_src}/build',
+                                capture_output=True, text=True)
+    logging.info(f'make clean output:\n{make_clean.stdout}\n{make_clean.stderr}\n')
+    # 检出指定的提交
+    checkout_result = subprocess.run(f'echo {password} | git checkout {commit_hash}', shell=True, cwd=repo_src, capture_output=True,
+                                     text=True)
+    logging.info(f'Checkout commit {commit_hash} output:\n{checkout_result.stdout}\n{checkout_result.stderr}\n')
 
-        # 运行 mk_make.py 脚本并记录输出
-        result1 = subprocess.run(['python3', 'scripts/mk_make.py'], cwd=repo_src, capture_output=True, text=True)
-        log.write(f'Running mk_make.py output:\n{result1.stdout}\n{result1.stderr}\n')
+    # 运行 mk_make.py 脚本并记录输出
+    result1 = subprocess.run(f"echo {password} | sudo -S python3 scripts/mk_make.py", shell=True, cwd=repo_src,
+                             capture_output=True, text=True)
+    logging.info(f'Running mk_make.py output:\n{result1.stdout}\n{result1.stderr}\n')
 
-        # 执行 make 并记录输出
-        make_result = subprocess.run(['make', '-j32'], cwd=f'{repo_src}/build', capture_output=True, text=True)
-        # 重命名
-        subprocess.run(['mv', 'z3', f'/home/uu613/workspace/z3_commits/z3-{commit_hash}'],
-                       cwd=f'{repo_src}/build', capture_output=True, text=True)
-        log.write(f'make output:\n{make_result.stdout}\n{make_result.stderr}\n')
+    # 执行 make 并记录输出
+    make_result = subprocess.run(f"echo {password} | sudo -S make -j32", shell=True, cwd=f'{repo_src}/build',
+                                 capture_output=True, text=True)
+    # 重命名
+    subprocess.run(['mv', 'z3', f'/home/uu613/workspace/z3_commits/z3-{commit_hash}'],
+                   cwd=f'{repo_src}/build', capture_output=True, text=True)
+    logging.info(f'make output:\n{make_result.stdout}\n{make_result.stderr}\n')
 
-        # 执行 make install 并记录输出
-        make_install_result = subprocess.run(['sudo', '-S'] + command.split(), input=password, text=True,
-                                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=f'{repo_src}/build')
-        log.write(f'make install output:\n{make_install_result.stdout}\n{make_install_result.stderr}\n')
+    # 执行 make install 并记录输出
+    make_install_result = subprocess.run(['sudo', '-S'] + command.split(), input=password, text=True,
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=f'{repo_src}/build')
+    logging.info(f'make install output:\n{make_install_result.stdout}\n{make_install_result.stderr}\n')
 
 
 csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
@@ -119,10 +122,17 @@ def build_each_commit():
     old_version_hash = versions_to_commit.get('z3-4.7.1-x64-ubuntu-16.04')
     new_version_hash = versions_to_commit.get('z3-4.8.5-x64-ubuntu-16.04')
     commit_list = get_commits_between_versions(repo_src, old_version_hash, new_version_hash)
+    logging.info(f"Total commits: {len(commit_list)}")
     for commit in commit_list:
+        # 如果已经构建过了，就跳过
+        if f'z3-{commit}' in subprocess.run('ls', shell=True, cwd='/home/uu613/workspace/z3_commits',
+                                            capture_output=True, text=True).stdout:
+            logging.info(f"Exists, Skipped {commit}, Time: {datetime.now()}")
+            continue
         build_from_commit(repo_src, commit)
-        logging.info(f"Built {commit}")
+        logging.info(f"Built {commit}, Time: {datetime.now()}")
 
 
-# mark_buggy_version()
-build_each_commit()
+if __name__ == '__main__':
+    # mark_buggy_version()
+    build_each_commit()
