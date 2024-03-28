@@ -30,17 +30,18 @@ def build_from_commit(repo_src, commit_hash):
     password = '123123'
     command = 'make install'
 
-    make_clean = subprocess.run(f"echo {password} | sudo -S make clean", shell=True, cwd=f'{repo_src}/build',
+    make_clean = subprocess.run(f"echo {password} | sudo -S rm -rf build", shell=True, cwd=repo_src,
                                 capture_output=True, text=True)
     logging.info(f'make clean output:\n{make_clean.stdout}\n{make_clean.stderr}\n')
 
     # reset
-    reset_result = subprocess.run(f'echo {password} | git reset --hard', shell=True, cwd=repo_src, capture_output=True,
+    reset_result = subprocess.run(f'echo {password} | sudo -S git reset --hard', shell=True, cwd=repo_src,
+                                  capture_output=True,
                                   text=True)
     logging.info(f'Reset output:\n{reset_result.stdout}\n{reset_result.stderr}\n')
 
     # 检出指定的提交
-    checkout_result = subprocess.run(f'echo {password} | git checkout {commit_hash}', shell=True, cwd=repo_src,
+    checkout_result = subprocess.run(f'echo {password} | sudo -S git checkout {commit_hash}', shell=True, cwd=repo_src,
                                      capture_output=True,
                                      text=True)
     logging.info(f'Checkout commit {commit_hash} output:\n{checkout_result.stdout}\n{checkout_result.stderr}\n')
@@ -53,10 +54,10 @@ def build_from_commit(repo_src, commit_hash):
     # 执行 make 并记录输出
     make_result = subprocess.run(f"echo {password} | sudo -S make -j32", shell=True, cwd=f'{repo_src}/build',
                                  capture_output=True, text=True)
-    # 重命名
-    subprocess.run(['mv', 'z3', f'/home/uu613/workspace/z3_commits/z3-{commit_hash}'],
-                   cwd=f'{repo_src}/build', capture_output=True, text=True)
     logging.info(f'make output:\n{make_result.stdout}\n{make_result.stderr}\n')
+    # 重命名
+    subprocess.run(f"echo {password} | sudo -S mv z3 /home/uu613/workspace/z3_commits/z3-{commit_hash}", shell=True,
+                   cwd=f'{repo_src}/build', capture_output=True, text=True)
 
     # 执行 make install 并记录输出
     make_install_result = subprocess.run(['sudo', '-S'] + command.split(), input=password, text=True,
