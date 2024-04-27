@@ -6,6 +6,7 @@ logging.basicConfig(level=logging.INFO)
 
 repo_path = "/home/uu613/workspace/z3"
 csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
+result_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs_result.csv"
 versions = ['z3-4.7.1-x64-ubuntu-16.04',
             'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04',
             'z3-4.8.3.7f5d66c3c299-x64-ubuntu-16.04',
@@ -59,13 +60,11 @@ def find_bad_commit(case_filename, bug_result, bic):
         # 运行测试
         if run_test(case_filename, bug_result, bic):
             # 如果测试通过，则当前提交是好的
-            subprocess.run(['git', 'bisect', 'good'], cwd=repo_path)
+            output = subprocess.check_output(['git', 'bisect', 'good'], text=True, cwd=repo_path)
         else:
             # 如果测试失败，则当前提交是坏的
-            subprocess.run(['git', 'bisect', 'bad'], cwd=repo_path)
+            output = subprocess.check_output(['git', 'bisect', 'bad'], text=True, cwd=repo_path)
 
-        # 检查是否已经找到坏的提交
-        output = subprocess.check_output(['git', 'bisect', 'visualize'], text=True, cwd=repo_path)
         if 'is the first bad commit' in output:
             return output
 
@@ -99,3 +98,4 @@ if __name__ == '__main__':
             target = find_bad_commit(row['Case-Filename'], bug_result, bic=False)
             git_bisect_reset()
             df.at[index, 'target_bfc'] = target
+    df.to_csv(result_path, index=False)
