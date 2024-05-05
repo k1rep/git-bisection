@@ -66,6 +66,8 @@ def find_bad_commit(case_filename, bug_result, bic):
             output = subprocess.check_output(['git', 'bisect', 'bad'], text=True, cwd=repo_path)
 
         if 'is the first bad commit' in output:
+            # 保留第一个is前面的内容
+            output = output[:output.find('is the first bad commit')-1]
             return output
 
 
