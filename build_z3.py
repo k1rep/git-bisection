@@ -82,36 +82,6 @@ versions_to_commit = {'z3-4.7.1-x64-ubuntu-16.04': '3b1b82bef05a1b5fd69ece79c80a
                       'z3-4.8.5-x64-ubuntu-16.04': 'e79542cc689d52ec4cb34ce4ae3fbe56e7a0bf70'}
 
 
-def mark_buggy_version():
-    df = pd.read_csv(csv_path)
-
-    df['induced_version'] = '-1'
-    df['fixed_version'] = '-1'
-
-    # 遍历DataFrame的每一行
-    for index, row in df.iterrows():
-        # 前5个字符
-        bug_version = row[df.columns[1]][3:8]
-        # 遍历列标题，找到含有bug_version的列
-        for column in df.columns[3:8]:
-            if bug_version in column:
-                # 向前遍历找到第一个不同的列
-                for i in range(df.columns.get_loc(column) - 1, 2, -1):
-                    if row[df.columns[i]] != row[df.columns[2]]:
-                        df.at[index, 'induced_version'] = df.columns[i]
-                        break
-                # 向后遍历找到第一个不同的列
-                for i in range(df.columns.get_loc(column) + 1, len(df.columns)):
-                    # 不以z3开头
-                    if not df.columns[i].startswith('z3'):
-                        break
-                    if row[df.columns[i]] != row[df.columns[2]]:
-                        df.at[index, 'fixed_version'] = df.columns[i]
-                        break
-
-    df.to_csv(csv_path, index=False)
-
-
 def get_commits_between_versions(repo_src, old_version, new_version):
     # 构建命令
     command = f"git log --oneline {old_version}..{new_version}"
@@ -146,5 +116,4 @@ def build_each_commit():
 
 
 if __name__ == '__main__':
-    # mark_buggy_version()
     build_each_commit()

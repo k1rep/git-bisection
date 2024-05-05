@@ -100,8 +100,18 @@ if __name__ == "__main__":
     with open(csv_path, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(["Case-Filename", "Z3 Version", "result"])
+        # 对于所有的output文件
         for filename in target_filenames:
+            # 找到与之配对的case-smt2文件
             most_similar_file, similarity_score = find_most_similar_file(filename, folder_path)
+            logging.info(f"Most similar file to {filename} is {most_similar_file} "
+                         f"with similarity score {similarity_score}")
+            # 找到这个output文件对应的z3版本
             version = find_z3_version(os.path.join(folder_path, filename))
+            logging.critical(f"Version of {filename} is {version}")
+            # 找到这个output文件的测试结果
             result = get_test_result(os.path.join(folder_path, filename))
+            logging.critical(f"Result of {filename} is {result}")
+            if version is None and result is None:
+                continue
             writer.writerow([most_similar_file, version, result])
