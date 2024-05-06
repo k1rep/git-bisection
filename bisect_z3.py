@@ -1,3 +1,8 @@
+"""
+This script is used to find the BIC and BFC of Z3 bugs.
+The input is a csv file containing the information of Z3 bugs.
+The output is a csv file containing the information of Z3 bugs and the BIC and BFC of each bug.
+"""
 import subprocess
 import pandas as pd
 import logging
@@ -7,11 +12,43 @@ logging.basicConfig(level=logging.INFO)
 repo_path = "/home/uu613/workspace/z3"
 csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
 result_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs_result.csv"
-versions = ['z3-4.7.1-x64-ubuntu-16.04',
+versions = ['z3-4.4.0-x64-ubuntu-14.04',
+            'z3-4.4.1-x64-ubuntu-14.04',
+            'z3-4.5.0-x64-ubuntu-14.04',
+            'z3-4.6.0-x64-ubuntu-16.04',
+            'z3-4.7.1-x64-ubuntu-16.04',
             'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04',
             'z3-4.8.3.7f5d66c3c299-x64-ubuntu-16.04',
             'z3-4.8.4.d6df51951f4c-x64-ubuntu-16.04',
-            'z3-4.8.5-x64-ubuntu-16.04']
+            'z3-4.8.5-x64-ubuntu-16.04',
+            'z3-4.8.6-x64-ubuntu-16.04',
+            'z3-4.8.7-x64-ubuntu-16.04',
+            'z3-4.8.8-x64-ubuntu-16.04',
+            'z3-4.8.9-x64-ubuntu-16.04',
+            'z3-4.8.10-x64-ubuntu-18.04',
+            'z3-4.8.11-x64-glibc-2.31',
+            'z3-4.8.12-x64-glibc-2.31',
+            'z3-4.8.13-x64-glibc-2.31',
+            'z3-4.8.14-x64-glibc-2.31',
+            'z3-4.8.15-x64-glibc-2.31',
+            'z3-4.8.16-x64-glibc-2.31',
+            'z3-4.8.17-x64-glibc-2.31',
+            'z3-4.9.0-x64-glibc-2.31',
+            'z3-4.9.1-x64-glibc-2.31',
+            'z3-4.10.0-x64-glibc-2.31',
+            'z3-4.10.1-x64-glibc-2.31',
+            'z3-4.10.2-x64-glibc-2.31',
+            'z3-4.11.0-x64-glibc-2.31',
+            'z3-4.11.2-x64-glibc-2.31',
+            'z3-4.12.0-x64-glibc-2.35',
+            'z3-4.12.1-x64-glibc-2.35',
+            'z3-4.12.2-x64-glibc-2.35',
+            'z3-4.12.3-x64-glibc-2.35',
+            'z3-4.12.4-x64-glibc-2.35',
+            'z3-4.12.5-x64-glibc-2.35',
+            'z3-4.12.6-x64-glibc-2.35',
+            'z3-4.13.0-x64-glibc-2.35'
+            ]
 versions_to_commit = {'z3-4.7.1-x64-ubuntu-16.04': '3b1b82bef05a1b5fd69ece79c80a95fb6d72a990',
                       'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04': 'b301a59899ff401dc1a98dd522b8a8df19471dee',
                       'z3-4.8.3.7f5d66c3c299-x64-ubuntu-16.04': 'f9f83040278cdda4a92c69385387ff2a49799548',
@@ -67,7 +104,7 @@ def find_bad_commit(case_filename, bug_result, bic):
 
         if 'is the first bad commit' in output:
             # 保留第一个is前面的内容
-            output = output[:output.find('is the first bad commit')-1]
+            output = output[:output.find('is the first bad commit') - 1]
             return output
 
 

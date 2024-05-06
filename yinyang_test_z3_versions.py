@@ -1,7 +1,10 @@
-#!/home/uu613/.virtualenvs/bisection/bin/python
+"""
+For each version of Z3, run Yinyang on the benchmark2 folder.
+"""
 import os
 import subprocess
-
+import logging
+logging.basicConfig(level=logging.INFO)
 workspace_path = "/home/uu613/workspace/"
 basic_path = "/home/uu613/workspace/z3_versions/"
 versions = ['z3-4.7.1-x64-ubuntu-16.04',
@@ -24,7 +27,7 @@ def main():
                            f"benchmark2")
 
             # 在后台并行执行命令
-            print(f"在后台执行：{yinyang_cmd}")
+            logging.critical(f"在后台执行：{yinyang_cmd}")
 
             subprocess.Popen(yinyang_cmd, shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,

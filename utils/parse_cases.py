@@ -1,5 +1,9 @@
+"""
+This script is used to parse the cases from the logs(sqlite) or the cases folder(z3).
+"""
 import csv
 import os
+import shutil
 from difflib import SequenceMatcher
 import logging
 
@@ -57,6 +61,22 @@ def logs2cases(input_path, output_path):
         count += 1
 
 
+def extract_logic_bugs_yinyang(bugs_path, output_path):
+    # List all files in the bugs_path
+    for filename in os.listdir(bugs_path):
+        # Check if the filename starts with 'incorrect'
+        if filename.startswith('incorrect'):
+            source = os.path.join(bugs_path, filename)
+            destination = os.path.join(output_path, filename)
+
+            # Check if the file already exists in the output path
+            if not os.path.exists(destination):
+                # Move the file
+                shutil.move(source, destination)
+            else:
+                logging.critical(f"Skipping {filename}, as it already exists in the output path.")
+
+
 def find_z3_version(file_path):
     try:
         with open(file_path, 'r') as file:
@@ -93,8 +113,10 @@ if __name__ == "__main__":
     # input_path = '/root/code/logs/3.28.0'
     # output_path = '/root/code/cases/3.28.0'
     # logs2cases(input_path, output_path)
+    bugs_path = "/home/uu613/workspace/bugs"
     folder_path = "/home/uu613/workspace/bugs/new_folder"
     csv_path = "/home/uu613/workspace/bugs/new_folder/z3_bugs.csv"
+    extract_logic_bugs_yinyang(bugs_path, folder_path)
     target_filenames = [filename for filename in os.listdir(folder_path) if filename.endswith('.output')
                         and os.path.isfile(os.path.join(folder_path, filename))]
     with open(csv_path, mode='w', newline='') as file:

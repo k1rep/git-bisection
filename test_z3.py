@@ -1,3 +1,9 @@
+"""
+This script is used to test the z3 solver on different versions.
+Given a csv file containing the test cases, the script will test each case on each version of z3.
+The results will be stored in a new csv file.
+mark_buggy_version() will mark the buggy version for each bug.
+"""
 import os
 import subprocess
 import pandas as pd

@@ -1,5 +1,6 @@
-import logging
 import subprocess
+import logging
+logging.basicConfig(level=logging.INFO)
 
 sqlite_configure_flags = '--enable-fts5 --enable-rtree'
 
@@ -26,5 +27,5 @@ if __name__ == "__main__":
     sqlite_tag = 'version-3.28.0'
     build_from_tag(sqlite_repo, sqlite_tag)
     output = subprocess.check_output('sqlite3 --version', shell=True)
-    print(output.decode())
+    logging.info(output.decode())
     # make_clean(sqlite_repo)

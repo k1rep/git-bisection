@@ -6,6 +6,7 @@ import signal
 import subprocess
 
 import build_sqlite as b
+logging.basicConfig(level=logging.INFO)
 
 TAGs_before = ['version-3.24.0', 'version-3.25.0', 'version-3.25.1', 'version-3.25.2', 'version-3.25.3',
                'version-3.26.0', 'version-3.27.0', 'version-3.27.1', 'version-3.27.2']
@@ -41,8 +42,7 @@ def exec_case(test_case):
         stderr = p.stderr.read().decode().strip()
         retcode = p.returncode
     except Exception as ex:
-        print('Error')
-        print(f'{test_case}')
+        logging.error(f"Test Case: {test_case}, Error: {ex}")
         '''
         parent = psutil.Process(pid)
         children = parent.children(recursive=True)
@@ -61,8 +61,7 @@ def compare(stdout):
     try:
         res = 'pass' if results[0] == results[1] else 'fail'
     except Exception as ex:
-        print('======')
-        print(stdout)
+        logging.error(f"Error: {ex}, stdout: {stdout}")
         res = 'compare_error'
     return res
 
