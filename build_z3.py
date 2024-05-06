@@ -1,8 +1,10 @@
-import logging
+"""
+This script is used to build the Z3 solver from commits between different versions.
+"""
 import subprocess
 from datetime import datetime
-
-import pandas as pd
+import logging
+from utils.constants import VERSIONS_TO_COMMIT
 
 logging.basicConfig(level=logging.INFO)
 
@@ -66,20 +68,10 @@ def build_from_commit(repo_src, commit_hash):
                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=f'{repo_src}/build')
         logging.info(f'make install output:\n{make_install_result.stdout}\n{make_install_result.stderr}\n')
     except Exception as e:
-        logging.error(f"Error: {e}")
+        logging.error(f"Error: {e}, commit: {commit_hash}")
 
 
 csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
-versions = ['z3-4.7.1-x64-ubuntu-16.04',
-            'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04',
-            'z3-4.8.3.7f5d66c3c299-x64-ubuntu-16.04',
-            'z3-4.8.4.d6df51951f4c-x64-ubuntu-16.04',
-            'z3-4.8.5-x64-ubuntu-16.04']
-versions_to_commit = {'z3-4.7.1-x64-ubuntu-16.04': '3b1b82bef05a1b5fd69ece79c80a95fb6d72a990',
-                      'z3-4.8.1.016872a5e0f6-x64-ubuntu-16.04': 'b301a59899ff401dc1a98dd522b8a8df19471dee',
-                      'z3-4.8.3.7f5d66c3c299-x64-ubuntu-16.04': 'f9f83040278cdda4a92c69385387ff2a49799548',
-                      'z3-4.8.4.d6df51951f4c-x64-ubuntu-16.04': 'c99a06a0bcb349eebf11fb147c8f3ccec3ecabf1',
-                      'z3-4.8.5-x64-ubuntu-16.04': 'e79542cc689d52ec4cb34ce4ae3fbe56e7a0bf70'}
 
 
 def get_commits_between_versions(repo_src, old_version, new_version):
@@ -101,10 +93,10 @@ def get_commits_between_versions(repo_src, old_version, new_version):
 
 def build_each_commit():
     repo_src = '/home/uu613/workspace/z3'
-    old_version_hash = versions_to_commit.get('z3-4.7.1-x64-ubuntu-16.04')
-    new_version_hash = versions_to_commit.get('z3-4.8.5-x64-ubuntu-16.04')
+    old_version_hash = VERSIONS_TO_COMMIT.get('z3-4.4.0-x64-ubuntu-14.04')
+    new_version_hash = VERSIONS_TO_COMMIT.get('z3-4.13.0-x64-glibc-2.35')
     commit_list = get_commits_between_versions(repo_src, old_version_hash, new_version_hash)
-    logging.info(f"Total commits: {len(commit_list)}")
+    logging.critical(f"Total commits: {len(commit_list)}")
     for commit in commit_list:
         # 如果已经构建过了，就跳过
         if f'z3-{commit}' in subprocess.run('ls', shell=True, cwd='/home/uu613/workspace/z3_commits',
