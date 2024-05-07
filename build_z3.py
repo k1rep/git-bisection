@@ -95,7 +95,8 @@ def build_from_commit(repo_src, commit_hash, worktree_path):
         logging.error(f"Build failed for commit: {commit_hash}, Error: {str(e)}")
     finally:
         # 清理工作树
-        subprocess.run(["git", "worktree", "remove", worktree_path], check=True, cwd=repo_src)
+        subprocess.run(['sudo', '-S']+["git", "worktree", "remove", worktree_path], input=password,
+                       check=True, cwd=repo_src)
         if os.path.exists(worktree_path):
             shutil.rmtree(worktree_path)
 
