@@ -65,6 +65,8 @@ def get_cvc5_release(version, download_dir):
         url = f"{base_url}/{version}/cvc5-Linux-static.zip"
         downloaded_file = download_file(url, download_dir)
         unzip_file(downloaded_file, download_dir)
+        # 重命名文件夹
+        os.rename(os.path.join(download_dir, 'cvc5-Linux-static'), os.path.join(download_dir, version))
 
 
 if __name__ == '__main__':
