@@ -7,7 +7,7 @@ import shutil
 import subprocess
 from datetime import datetime
 import logging
-from utils.constants import VERSIONS_TO_COMMIT
+from utils.constants import Z3_VERSIONS_TO_COMMIT
 
 logging.basicConfig(level=logging.INFO, filename='build_log.log', filemode='a',
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -123,12 +123,12 @@ def get_commits_between_versions(repo_src, old_version, new_version):
 
 def build_each_commit():
     repo_src = '/home/uu613/workspace/z3'
-    old_version_hash = VERSIONS_TO_COMMIT.get('z3-4.4.0-x64-ubuntu-14.04')
-    new_version_hash = VERSIONS_TO_COMMIT.get('z3-4.13.0-x64-glibc-2.35')
+    old_version_hash = Z3_VERSIONS_TO_COMMIT.get('z3-4.4.0-x64-ubuntu-14.04')
+    new_version_hash = Z3_VERSIONS_TO_COMMIT.get('z3-4.13.0-x64-glibc-2.35')
     commit_list = get_commits_between_versions(repo_src, old_version_hash, new_version_hash)
     logging.info(f"Total commits to build: {len(commit_list)}")
     built_commits = set(os.listdir('/home/uu613/workspace/z3_commits'))  # Cache already built
-    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
         # 将每个commit分配给build_from_commit函数
         futures = []
         for i, commit in enumerate(commit_list):

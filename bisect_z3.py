@@ -6,7 +6,7 @@ The output is a csv file containing the information of Z3 bugs and the BIC and B
 import subprocess
 import pandas as pd
 import logging
-from utils.constants import VERSIONS_TO_COMMIT
+from utils.constants import Z3_VERSIONS_TO_COMMIT
 
 logging.basicConfig(level=logging.INFO)
 
@@ -77,8 +77,8 @@ if __name__ == '__main__':
         induced_version = row['induced_version']
         fixed_version = row['fixed_version']
         if induced_version != '-1':
-            good_version = VERSIONS_TO_COMMIT[induced_version]
-            bad_version = VERSIONS_TO_COMMIT[bug_version]
+            good_version = Z3_VERSIONS_TO_COMMIT[induced_version]
+            bad_version = Z3_VERSIONS_TO_COMMIT[bug_version]
             bug_result = row['result']
             logging.info(f"[finding BIC]Start bisecting {good_version}..{bad_version}")
             git_bisect_start(good_version, bad_version)
@@ -88,8 +88,8 @@ if __name__ == '__main__':
         if fixed_version != '-1':
             # 把引入错误的版本作为好的版本，把修复错误的版本作为坏的版本
             # 这样可以定位到修复的commit
-            good_version = VERSIONS_TO_COMMIT[bug_version]
-            bad_version = VERSIONS_TO_COMMIT[fixed_version]
+            good_version = Z3_VERSIONS_TO_COMMIT[bug_version]
+            bad_version = Z3_VERSIONS_TO_COMMIT[fixed_version]
             bug_result = row['result']
             logging.info(f"[finding BFC]Start bisecting {good_version}..{bad_version}")
             git_bisect_start(good_version, bad_version)
