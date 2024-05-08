@@ -19,7 +19,7 @@ def download_file(url, save_as):
         logging.info(f"File downloaded and saved to {save_as}")
         return save_as
     else:
-        logging.error(f"Failed to download the file.")
+        logging.error(f"Failed to download the file. Status code: {response.status_code}. URL: {url}")
         return None
 
 
@@ -53,20 +53,20 @@ def get_z3_release(version, download_dir, unzip_dir):
 
 def get_cvc5_release(version, download_dir):
     base_url = "https://github.com/cvc5/cvc5/releases/download"
-    if version is not 'cvc5-1.1.1' or version is not 'cvc5-1.1.2':
+    if version != 'cvc5-1.1.1' and version != 'cvc5-1.1.2':
         url = f"{base_url}/{version}/cvc5-Linux"
-        if os.path.exists(os.path.join(download_dir, version)):
-            logging.info(f"File already exists: {os.path.join(download_dir, version)}")
+        filename = os.path.join(download_dir, version)
+        if os.path.exists(filename):
+            logging.info(f"File already exists: {filename}")
             return
-        downloaded_file = download_file(url, download_dir)
-        # 重命名
-        os.rename(os.path.join(downloaded_file, 'cvc5-Linux'), os.path.join(download_dir, version))
+        download_file(url, filename)
     else:
         url = f"{base_url}/{version}/cvc5-Linux-static.zip"
-        downloaded_file = download_file(url, download_dir)
+        filename = f"cvc5-Linux-static-{version}.zip"
+        downloaded_file = download_file(url, os.path.join(download_dir, filename))
         unzip_file(downloaded_file, download_dir)
         # 重命名文件夹
-        os.rename(os.path.join(download_dir, 'cvc5-Linux-static'), os.path.join(download_dir, version))
+        os.rename(os.path.join(download_dir, f'cvc5-Linux-static'), os.path.join(download_dir, version))
 
 
 if __name__ == '__main__':
