@@ -11,6 +11,8 @@ logging.basicConfig(level=logging.INFO)
 workspace_path = "/home/uu613/workspace/"
 z3_basic_path = "/home/uu613/workspace/z3_versions/"
 cvc5_basic_path = "/home/uu613/workspace/cvc5_versions/"
+python_env_path = "/home/uu613/.virtualenvs/bisection/bin/python"
+yinyang_script_path = "/home/uu613/workspace/yinyang/build/scripts-3.10/typefuzz"
 
 
 def yinyang_test_z3_versions():
@@ -48,9 +50,10 @@ def yinyang_test_cvc5_versions():
             # 构建yinyang命令
             yinyang_cmd = (f"/home/uu613/.virtualenvs/bisection/bin/python "
                            f"/home/uu613/workspace/yinyang/build/scripts-3.10/typefuzz "
-                           f"/home/uu613/workspace/z3_versions/z3-4.13.0-x64-glibc-2.35/bin/z3 model_validate=true;"
-                           f"\"{cvc5_path} --check-models -m -i -q\" "
-                           f"benchmark2")
+                           f"\"/home/uu613/workspace/z3_versions/z3-4.13.0-x64-glibc-2.35/bin/z3 model_validate=true;"
+                           f"{cvc5_path} --check-models -m -i -q\" "
+                           f"benchmark2 "
+                           f"-b /home/uu613/workspace/cvc5_bugs/")
 
             # 在后台并行执行命令
             logging.info(f"在后台执行：{yinyang_cmd}")
