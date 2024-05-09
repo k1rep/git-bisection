@@ -8,13 +8,18 @@ import os
 import subprocess
 import pandas as pd
 import logging
-
-csv_path = "/home/uu613/workspace/bugs/new_folder/z3_bugs.csv"
-tested_csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
-basic_path = "/home/uu613/workspace/z3_versions/"
-case_path = "/home/uu613/workspace/bugs/new_folder/"
-versions = [str(version) for version in os.listdir(basic_path) if version.startswith('z3-')]
 logging.basicConfig(level=logging.INFO)
+
+z3_csv_path = "/home/uu613/workspace/bugs/new_folder/z3_bugs.csv"
+z3_tested_csv_path = "/home/uu613/workspace/bugs/new_folder/tested_z3_bugs.csv"
+z3_basic_path = "/home/uu613/workspace/z3_versions/"
+z3_case_path = "/home/uu613/workspace/bugs/new_folder/"
+z3_versions = [str(version) for version in os.listdir(z3_basic_path) if version.startswith('z3-')]
+cvc5_csv_path = "/home/uu613/workspace/cvc5_bugs/new_folder/cvc5_bugs.csv"
+cvc5_tested_csv_path = "/home/uu613/workspace/cvc5_bugs/new_folder/tested_cvc5_bugs.csv"
+cvc5_basic_path = "/home/uu613/workspace/cvc5_versions/"
+cvc5_case_path = "/home/uu613/workspace/cvc5_bugs/new_folder/"
+cvc5_versions = [str(version) for version in os.listdir(z3_basic_path) if version.startswith('cvc5-')]
 
 
 def version_key(version):
@@ -28,8 +33,10 @@ def version_key(version):
 
 
 # Sort versions using the custom key
-sorted_versions = sorted(versions, key=version_key)
-logging.info(f"Versions: {sorted_versions}")
+z3_sorted_versions = sorted(z3_versions, key=version_key)
+logging.info(f"Z3 Versions: {z3_sorted_versions}")
+cvc5_sorted_versions = sorted(cvc5_versions, key=version_key)
+logging.info(f"CVC5 Versions: {cvc5_sorted_versions}")
 
 
 def mark_buggy_version(tested_csv_path):
@@ -62,19 +69,26 @@ def mark_buggy_version(tested_csv_path):
     df.to_csv(tested_csv_path, index=False)
 
 
-if __name__ == '__main__':
+def test_bug_case_on_each_version(csv_path, solver):
     df = pd.read_csv(csv_path)
-
+    sorted_versions = z3_sorted_versions if solver == 'z3' else cvc5_sorted_versions
+    case_path = z3_case_path if solver == 'z3' else cvc5_case_path
+    basic_path = z3_basic_path if solver == 'z3' else cvc5_basic_path
     for version in sorted_versions:
         df[version] = ''
-        z3_path = os.path.join(basic_path, version, 'bin', 'z3')
+        if solver == 'z3':
+            solver_path = os.path.join(z3_basic_path, version, 'bin', 'z3')
+        else:
+            if version == 'cvc5-1.1.1' or version == 'cvc5-1.1.2':
+                solver_path = os.path.join(cvc5_basic_path, version, 'bin', 'cvc5')
+            else:
+                solver_path = os.path.join(cvc5_basic_path, version)
         # 授权
-        os.chmod(z3_path, 0o755)
+        os.chmod(solver_path, 0o755)
         for index, row in df.iterrows():
             case_filename = row['Case-Filename']
-            expected_result = row['result']
             try:
-                result = subprocess.run([z3_path, os.path.join(case_path, case_filename)],
+                result = subprocess.run([solver_path, os.path.join(case_path, case_filename)],
                                         cwd=basic_path, capture_output=True, text=True, timeout=60)
                 output = result.stdout.strip()
                 # 寻找sat或unsat
@@ -92,4 +106,10 @@ if __name__ == '__main__':
                 logging.error(f"Unexpected error: {e}")
 
     df.to_csv(os.path.join(case_path, 'tested_' + os.path.basename(csv_path)), index=False)
-    mark_buggy_version(tested_csv_path)
+
+
+if __name__ == '__main__':
+    # test_bug_case_on_each_version(z3_csv_path, solver='z3')
+    # mark_buggy_version(z3_tested_csv_path)
+    test_bug_case_on_each_version(cvc5_csv_path, solver='cvc5')
+    mark_buggy_version(cvc5_tested_csv_path)

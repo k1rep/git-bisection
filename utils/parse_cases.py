@@ -1,5 +1,7 @@
 """
-This script is used to parse the cases from the logs(sqlite) or the cases folder(z3).
+This script is used to parse the cases from the logs(sqlite) or the cases folder(z3 and cvc5).
+
+Before running this script, you need to copy the logic bugs(start with incorrect) to the new_folder!!!
 """
 import csv
 import os
@@ -94,7 +96,7 @@ def find_z3_version(file_path):
         return f"读取文件时发生错误: {str(e)}"
 
 
-def get_test_result(file_path):
+def get_z3_test_result(file_path):
     try:
         with open(file_path, 'r') as file:
             lines = file.readlines()
@@ -109,31 +111,77 @@ def get_test_result(file_path):
         return f"读取文件时发生错误: {str(e)}"
 
 
+def find_cvc5_version(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            if len(lines) >= 11:
+                ninth_line = lines[8]
+                index = ninth_line.find('cvc5-')
+                if index != -1:
+                    start_index = index
+                    end_index = ninth_line.find(' ', start_index)
+                    if end_index == -1:
+                        end_index = len(ninth_line)
+                    return ninth_line[start_index:end_index]
+    except Exception as e:
+        return f"读取文件时发生错误: {str(e)}"
+
+
+def get_cvc5_test_result(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+            if len(lines) > 11:
+                result_line = lines[11]
+                start_index = 0
+                end_index = result_line.find('\n', start_index)
+                if end_index == -1:
+                    end_index = len(result_line)
+                return result_line[start_index:end_index]
+    except Exception as e:
+        return f"读取文件时发生错误: {str(e)}"
+
+
+def parse_to_csv(bugs_path, new_folder_path, csv_path, solver):
+    extract_logic_bugs_yinyang(bugs_path, new_folder_path)
+    target_filenames = [filename for filename in os.listdir(new_folder_path) if filename.endswith('.output')
+                        and os.path.isfile(os.path.join(new_folder_path, filename))]
+    with open(csv_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Case-Filename", "Version", "result"])
+        # 对于所有的output文件
+        for filename in target_filenames:
+            # 找到与之配对的case-smt2文件
+            most_similar_file, similarity_score = find_most_similar_file(filename, new_folder_path)
+            logging.info(f"Most similar file to {filename} is {most_similar_file} "
+                         f"with similarity score {similarity_score}")
+            # 找到这个output文件对应的z3/cvc5版本
+            if solver == 'z3':
+                version = find_z3_version(os.path.join(new_folder_path, filename))
+            else:
+                version = find_cvc5_version(os.path.join(new_folder_path, filename))
+            logging.info(f"Version of {filename} is {version}")
+            # 找到这个output文件的测试结果
+            if solver == 'z3':
+                result = get_z3_test_result(os.path.join(new_folder_path, filename))
+            else:
+                result = get_cvc5_test_result(os.path.join(new_folder_path, filename))
+            logging.info(f"Result of {filename} is {result}")
+            if version is None and result is None:
+                continue
+            writer.writerow([most_similar_file, version, result])
+
+
 if __name__ == "__main__":
     # input_path = '/root/code/logs/3.28.0'
     # output_path = '/root/code/cases/3.28.0'
     # logs2cases(input_path, output_path)
-    bugs_path = "/home/uu613/workspace/bugs"
-    folder_path = "/home/uu613/workspace/bugs/new_folder"
-    csv_path = "/home/uu613/workspace/bugs/new_folder/z3_bugs.csv"
-    extract_logic_bugs_yinyang(bugs_path, folder_path)
-    target_filenames = [filename for filename in os.listdir(folder_path) if filename.endswith('.output')
-                        and os.path.isfile(os.path.join(folder_path, filename))]
-    with open(csv_path, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(["Case-Filename", "Z3 Version", "result"])
-        # 对于所有的output文件
-        for filename in target_filenames:
-            # 找到与之配对的case-smt2文件
-            most_similar_file, similarity_score = find_most_similar_file(filename, folder_path)
-            logging.info(f"Most similar file to {filename} is {most_similar_file} "
-                         f"with similarity score {similarity_score}")
-            # 找到这个output文件对应的z3版本
-            version = find_z3_version(os.path.join(folder_path, filename))
-            logging.critical(f"Version of {filename} is {version}")
-            # 找到这个output文件的测试结果
-            result = get_test_result(os.path.join(folder_path, filename))
-            logging.critical(f"Result of {filename} is {result}")
-            if version is None and result is None:
-                continue
-            writer.writerow([most_similar_file, version, result])
+    z3_bugs_path = "/home/uu613/workspace/bugs"
+    z3_new_folder_path = "/home/uu613/workspace/bugs/new_folder"
+    z3_csv_path = "/home/uu613/workspace/bugs/new_folder/z3_bugs.csv"
+    cvc5_bugs_path = "/home/uu613/workspace/cvc5_bugs"
+    cvc5_new_folder_path = "/home/uu613/workspace/cvc5_bugs/new_folder"
+    cvc5_csv_path = "/home/uu613/workspace/cvc5_bugs/cvc5_bugs.csv"
+    # parse_to_csv(z3_bugs_path, z3_new_folder_path, z3_csv_path, 'z3')
+    parse_to_csv(cvc5_bugs_path, cvc5_new_folder_path, cvc5_csv_path, 'cvc5')
